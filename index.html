@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Household Budget App</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #333333; margin: 0; padding: 12px; font-size: 11.5px; line-height: 1.4; background-color: #f4f7f6; }
+        .header { margin-bottom: 12px; border-bottom: 3px solid #1a365d; padding: 10px 4px; }
+        .header h1 { color: #1a365d; font-size: 17px; text-transform: uppercase; margin: 0 0 2px 0; font-weight: bold; letter-spacing: -0.3px; }
+        .header .subtitle { color: #4a5568; font-size: 10.5px; margin: 0; font-weight: 500; }
+        .dashboard { position: sticky; top: 0; background: #ffffff; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 12px; z-index: 100; border-top: 4px solid #1a365d; }
+        .dash-title { font-weight: bold; color: #1a365d; text-transform: uppercase; margin-bottom: 6px; font-size: 11px; text-align: center; letter-spacing: 0.3px; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px; }
+              .card { background: #f7fafc; padding: 8px; border-radius: 4px; text-align: center; border: 1px solid #cbd5e0; }
+        .card-label { font-size: 8.5px; font-weight: bold; text-transform: uppercase; color: #4a5568; margin-bottom: 2px; }
+        .card-val { font-size: 13px; font-weight: bold; white-space: nowrap; }
+        .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; border-top: 1px dashed #cbd5e0; padding-top: 6px; }
+        .tool-card { background: #fffdf5; border: 1px solid #fbd38d; border-radius: 4px; padding: 6px; text-align: center; }
+        .tool-label { font-size: 8px; font-weight: bold; text-transform: uppercase; color: #b7791f; margin-bottom: 1px; }
+        .tool-val { font-size: 11px; font-weight: bold; color: #2d3748; }
+        .pos { color: #28a745; } .neg { color: #dc3545; } .warn { color: #dd6b20; font-weight: bold; }
+        .btn-reset { display: block; width: 100%; background-color: #718096; color: white; border: none; padding: 6px; border-radius: 4px; font-weight: bold; font-size: 9.5px; text-transform: uppercase; cursor: pointer; letter-spacing: 0.3px; }
+        .month-box { background: #fff; border-radius: 6px; border: 1px solid #cbd5e0; margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .month-header-flex { background: #1a365d; color: #fff; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
+        .month-title { font-weight: bold; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.3px; }
+        .month-analysis { font-size: 9.5px; font-weight: 500; background: rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th { background: #edf2f7; color: #4a5568; font-size: 8.5px; text-transform: uppercase; padding: 5px 6px; text-align: left; border-bottom: 1px solid #cbd5e0; }
+        td { padding: 6px 6px; border-bottom: 1px solid #edf2f7; vertical-align: middle; position: relative; }
+        .col-chk { width: 22px; text-align: center; }
+        .col-dt { width: 40px; font-weight: bold; color: #4a5568; }
+        .col-own { width: 34px; font-weight: bold; color: #718096; }
+        .col-amt { width: 72px; text-align: right; }
+        .proj-container { display: flex; flex-direction: column; gap: 1.5px; margin-top: 4px; border-top: 1px dotted #e2e8f0; padding-top: 3px; }
+        .proj-line { font-size: 8.5px; font-family: monospace; display: flex; justify-content: space-between; width: 145px; line-height: 1.1; }
+        .proj-name { color: #718096; }
+        .proj-badge-danger { background-color: #fff5f5; border: 1px dashed #feb2b2; padding: 3px; border-radius: 3px; animation: pulse 2s infinite; }
+        .var-box-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; background: #f7fafc; padding: 4px; border-radius: 4px; margin-top: 4px; border: 1px solid #e2e8f0; }
+        .var-input-group { display: flex; flex-direction: column; gap: 1px; }
+        .var-label { font-size: 7.5px; font-weight: bold; color: #4a5568; text-transform: uppercase; }
+        .var-field { width: 100%; border: 1px solid #cbd5e0; border-radius: 2px; padding: 1px 2px; font-size: 9.5px; text-align: right; box-sizing: border-box; font-weight: bold; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        input[type="checkbox"] { width: 14px; height: 14px; margin: 0; vertical-align: middle; }
+        input[type="number"] { width: 66px; text-align: right; border: 1px solid #cbd5e0; padding: 2px; border-radius: 3px; font-size: 10.5px; font-weight: bold; }
+        .checked-row { background-color: #f0fff4; opacity: 0.88; }
+        .day-end-box { background: #fffaf0; padding: 6px 10px; border-top: 1px solid #fed7d7; font-size: 9.5px; display: flex; justify-content: space-between; align-items: center; }
+        .day-end-input { border: 1px solid #cbd5e0; padding: 2px; width: 80px; text-align: right; border-radius: 3px; font-family: monospace; font-weight: bold; background: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Master Household Budget Calendar</h1>
+        <div class="subtitle">Interactive Live Projections Through December 31, 2026</div>
+    </div>
+
+    <div class="dashboard">
+        <div class="dash-title">Live Account Standings</div>
+        <div class="grid">
+            <div class="card" style="border-left: 3px solid #28a745;">
+                <div class="card-label">Boo Account</div>
+                <div class="card-val pos" id="bal-boo">$1,400.00</div>
+            </div>
+            <div class="card" style="border-left: 3px solid #dc3545;">
+                <div class="card-label">Your Checking</div>
+                <div class="card-val" id="bal-me">-$120.00</div>
+            </div>
+        </div>
+        
+        <div class="tools-grid">
+            <div class="tool-card">
+                <div class="tool-label">Your Safe-To-Spend</div>
+                <div class="tool-val" id="tool-safe">$0.00</div>
+            </div>
+            <div class="tool-card">
+                <div class="tool-label">Overdraft Quick-Fix</div>
+                <div class="tool-val" id="tool-fix">Healthy</div>
+            </div>
+        </div>
+        
+        <button class="btn-reset" onclick="clearAppData()">Reset Checked Items</button>
+    </div>
+
+    <div id="calendar-container"></div>
+        <script>
+        const initialBalances = { boo: 1400.00, me: -120.00 };
+
+        let ledgerData = [
+                      // JULY 2026
+            { id: "m1", month: "July 2026", date: "Jul 15", owner: "ME", desc: "Truist Loan Auto-Draft", acct: "me", amt: -159.00 },
+            { id: "m2", month: "July 2026", date: "Jul 16", owner: "BOO", desc: "Certified Court Docs", acct: "boo", amt: -50.00 },
+            { id: "m3", month: "July 2026", date: "Jul 17", owner: "ME", desc: "Biweekly Paycheck Deposit", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m4", month: "July 2026", date: "Jul 17", owner: "ME", desc: "Clear Outstanding Overdraft", acct: "me", amt: -120.00 },
+            { id: "m5", month: "July 2026", date: "Jul 17", owner: "ME", desc: "Regular Split + Trip Transfer to Boo", acct: "me", amt: -830.00 },
+            { id: "m6", month: "July 2026", date: "Jul 17", owner: "ME", desc: "Personal Spending Allowance (Gas/Beer)", acct: "me", amt: -255.00 },
+            { id: "m7", month: "July 2026", date: "Jul 17", owner: "BOO", desc: "Road Trip Bundle (Port/Gas/Food)", acct: "boo", amt: -300.00 },
+            { id: "m8", month: "July 2026", date: "Jul 17", owner: "BOO", desc: "Receive Split + Trip Transfer from Me", acct: "boo", amt: 830.00 },
+            { id: "m9", month: "July 2026", date: "Jul 17", owner: "BOO", desc: "Floating Weekly Buffer (Water/Groceries/Gas)", acct: "boo", amt: -475.00 },
+            { id: "m10", month: "July 2026", date: "Jul 20", owner: "BOO", desc: "Withdraw Honeymoon Cruise Cash Pool", acct: "boo", amt: -800.00 },
+            { id: "m11", month: "July 2026", date: "Jul 22", owner: "BOO", desc: "Home Internet Bill Auto-Pay", acct: "boo", amt: -70.00 },
+            { id: "m12", month: "July 2026", date: "Jul 24", owner: "ME", desc: "Ally Car Note Chippage (1 of 4)", acct: "me", amt: -137.50 },
+            { id: "m13", month: "July 2026", date: "Jul 25", owner: "BOO", desc: "Monthly Paycheck Hits", acct: "boo", amt: 3000.00, isPayday: true },
+            { id: "m14", month: "July 2026", date: "Jul 25", owner: "BOO", desc: "Pay Monthly Rent Installment", acct: "boo", amt: -2000.00 },
+            { id: "m15", month: "July 2026", date: "Jul 25", owner: "BOO", desc: "Phone Bill Auto-Draft", acct: "boo", amt: -231.00 },
+            { id: "m16", month: "July 2026", date: "Jul 31", owner: "BOO", desc: "Floating Weekly Expenses (Groceries/Nails)", acct: "boo", amt: -250.00 },
+            { id: "m17", month: "July 2026", date: "Jul 31", owner: "ME", desc: "Ally Car Note Chippage (2 of 4)", acct: "me", amt: -137.50 },
+            { id: "m18", month: "July 2026", date: "Jul 31", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m19", month: "July 2026", date: "Jul 31", owner: "ME", desc: "Transfer to Boo ($530 Split + $170 Booster)", acct: "me", amt: -700.00 },
+            { id: "m20", month: "July 2026", date: "Jul 31", owner: "ME", desc: "Personal Allowance", acct: "me", amt: -200.00 },
+            { id: "m21", month: "July 2026", date: "Jul 31", owner: "BOO", desc: "Receive Booster Transfer from Me", acct: "boo", amt: 700.00 },
+                      // AUGUST 2026
+            { id: "m22", month: "August 2026", date: "Aug 05", owner: "BOTH", desc: "Kids Back to School Supplies Target", acct: "boo", amt: -1000.00 },
+            { id: "m23", month: "August 2026", date: "Aug 05", owner: "ME", desc: "YouTube Subscription", acct: "me", amt: -15.00 },
+            { id: "m24", month: "August 2026", date: "Aug 07", owner: "ME", desc: "Ally Car Note Chippage (3 of 4)", acct: "me", amt: -137.50 },
+            { id: "m25", month: "August 2026", date: "Aug 10", owner: "BOO", desc: "Monthly Paycheck Hits", acct: "boo", amt: 3000.00, isPayday: true },
+            { id: "m26", month: "August 2026", date: "Aug 10", owner: "BOO", desc: "New Car Note Payment", acct: "boo", amt: -700.00 },
+            { id: "m27", month: "August 2026", date: "Aug 10", owner: "BOO", desc: "Floating Expenses (Nails/Groceries)", acct: "boo", amt: -350.00 },
+            { id: "m28", month: "August 2026", date: "Aug 10", owner: "ME", desc: "Credit Card Payment", acct: "me", amt: -50.00 },
+            { id: "m29", month: "August 2026", date: "Aug 14", owner: "ME", desc: "Ally Car Note Chippage (4 of 4)", acct: "me", amt: -137.50 },
+            { id: "m30", month: "August 2026", date: "Aug 14", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m31", month: "August 2026", date: "Aug 14", owner: "ME", desc: "Transfer to Boo Account", acct: "me", amt: -530.00 },
+            { id: "m32", month: "August 2026", date: "Aug 14", owner: "ME", desc: "Personal Allowance", acct: "me", amt: -200.00 },
+            { id: "m33", month: "August 2026", date: "Aug 14", owner: "ME", desc: "Cushion Fund Allocation #1", acct: "me", amt: -100.00 },
+            { id: "m34", month: "August 2026", date: "Aug 15", owner: "BOO", desc: "Household Insurance Premium", acct: "boo", amt: -800.00 },
+            { id: "m35", month: "August 2026", date: "Aug 15", owner: "ME", desc: "Truist Loan Auto-Draft", acct: "me", amt: -159.00 },
+            { id: "m36", month: "August 2026", date: "Aug 15", owner: "BOO", desc: "Receive Transfer from Me", acct: "boo", amt: 530.00 },
+            { id: "m37", month: "August 2026", date: "Aug 17", owner: "BOO", desc: "Apple Bill 2", acct: "boo", amt: -100.00 },
+            { id: "m38", month: "August 2026", date: "Aug 21", owner: "BOO", desc: "Apple Bill 1", acct: "boo", amt: -9.00 },
+            { id: "m39", month: "August 2026", date: "Aug 22", owner: "BOO", desc: "Home Internet Bill Auto-Pay", acct: "boo", amt: -70.00 },
+            { id: "m40", month: "August 2026", date: "Aug 25", owner: "BOO", desc: "Monthly Paycheck Hits", acct: "boo", amt: 3000.00, isPayday: true },
+            { id: "m41", month: "August 2026", date: "Aug 25", owner: "BOO", desc: "Pay Monthly Rent Installment", acct: "boo", amt: -2000.00 },
+            { id: "m42", month: "August 2026", date: "Aug 25", owner: "BOO", desc: "Phone Bill Auto-Draft", acct: "boo", amt: -231.00 },
+            { id: "m43", month: "August 2026", date: "Aug 25", owner: "BOO", desc: "Floating Expenses (Groceries/Nails)", acct: "boo", amt: -250.00 },
+            { id: "m44", month: "August 2026", date: "Aug 28", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m45", month: "August 2026", date: "Aug 28", owner: "ME", desc: "Christmas Fund Contribution #1", acct: "me", amt: -125.00 },
+            { id: "m46", month: "August 2026", date: "Aug 28", owner: "ME", desc: "Cushion Fund Allocation #2", acct: "me", amt: -100.00 },
+            { id: "m47", month: "August 2026", date: "Aug 28", owner: "ME", desc: "Transfer to Boo Account", acct: "me", amt: -530.00 },
+            { id: "m48", month: "August 2026", date: "Aug 28", owner: "ME", desc: "Personal Spending Allowance", acct: "me", amt: -200.00 },
+            { id: "m49", month: "AUGUST 2026", date: "Aug 28", owner: "BOO", desc: "Receive Transfer from Me", acct: "boo", amt: 530.00 },
+            { id: "m50", month: "August 2026", date: "Aug 28", owner: "ME", desc: "Credit Card Payment", acct: "me", amt: -50.00 },
+                      // SEPTEMBER 2026
+            { id: "m51", month: "September 2026", date: "Sep 05", owner: "ME", desc: "YouTube Subscription", acct: "me", amt: -15.00 },
+            { id: "m52", month: "September 2026", date: "Sep 10", owner: "BOO", desc: "New Car Note Payment", acct: "boo", amt: -700.00 },
+            { id: "m53", month: "September 2026", date: "Sep 11", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m54", month: "September 2026", date: "Sep 11", owner: "ME", desc: "Household Split Stack", acct: "me", amt: -955.00 },
+            { id: "m55", month: "September 2026", date: "Sep 11", owner: "BOO", desc: "Receive Transfer from Me", acct: "boo", amt: 530.00 },
+            { id: "m56", month: "September 2026", date: "Sep 15", owner: "ME", desc: "Truist Loan Auto-Draft", acct: "me", amt: -159.00 },
+            { id: "m57", month: "September 2026", date: "Sep 22", owner: "BOO", desc: "Home Internet Bill Auto-Pay", acct: "boo", amt: -70.00 },
+            { id: "m58", month: "September 2026", date: "Sep 25", owner: "BOO", desc: "Pay Monthly Rent Installment", acct: "boo", amt: -2000.00 },
+            { id: "m59", month: "September 2026", date: "Sep 25", owner: "BOO", desc: "Phone Bill Auto-Draft", acct: "boo", amt: -231.00 },
+            { id: "m60", month: "September 2026", date: "Sep 25", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m61", month: "September 2026", date: "Sep 25", owner: "ME", desc: "Household Split Stack", acct: "me", amt: -955.00 },
+            { id: "m62", month: "September 2026", date: "BOO", desc: "Receive Transfer from Me", acct: "boo", amt: 530.00 },
+            { id: "m63", month: "September 2026", date: "Sep 28", owner: "ME", desc: "Credit Card Payment", acct: "me", amt: -50.00 },
+                      // OCTOBER 2026
+            { id: "m64", month: "October 2026", date: "Oct 05", owner: "ME", desc: "YouTube Subscription", acct: "me", amt: -15.00 },
+            { id: "m65", month: "October 2026", date: "Oct 09", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m66", month: "October 2026", date: "Oct 09", owner: "ME", desc: "Household Split Stack", acct: "me", amt: -955.00 },
+            { id: "m67", month: "October 2026", date: "Oct 09", owner: "BOO", desc: "Receive Transfer from Me", acct: "boo", amt: 530.00 },
+            { id: "m68", month: "October 2026", date: "Oct 10", owner: "BOO", desc: "New Car Note Payment", acct: "boo", amt: -700.00 },
+            { id: "m69", month: "October 2026", date: "Oct 15", owner: "ME", desc: "Truist Loan Auto-Draft", acct: "me", amt: -159.00 },
+            { id: "m70", month: "October 2026", date: "Oct 22", owner: "BOO", desc: "Home Internet Bill Auto-Pay", acct: "boo", amt: -70.00 },
+            { id: "m71", month: "October 2026", date: "Oct 25", owner: "BOO", desc: "Pay Monthly Rent Installment", acct: "boo", amt: -2000.00 },
+            { id: "m72", month: "October 2026", date: "Oct 25", owner: "BOO", desc: "Phone Bill Auto-Draft", acct: "boo", amt: -231.00 },
+            { id: "m73", month: "October 2026", date: "Oct 23", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m74", month: "October 2026", date: "Oct 23", owner: "ME", desc: "Household Split Stack", acct: "me", amt: -955.00 },
+            { id: "m75", month: "October 2026", date: "Oct 23", owner: "BOO", desc: "Receive Transfer from Me", acct: "boo", amt: 530.00 },
+            { id: "m76", month: "October 2026", date: "Oct 28", owner: "ME", desc: "Credit Card Payment", acct: "me", amt: -50.00 },
+                      // NOVEMBER 2026
+            { id: "m77", month: "November 2026", date: "Nov 05", owner: "ME", desc: "YouTube Subscription", acct: "me", amt: -15.00 },
+            { id: "m78", month: "November 2026", date: "Nov 06", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m79", month: "November 2026", date: "Nov 06", owner: "ME", desc: "Household Split Stack", acct: "me", amt: -955.00 },
+            { id: "m80", month: "November 2026", date: "Nov 06", owner: "BOO", desc: "Receive Transfer from Me", acct: "boo", amt: 530.00 },
+            { id: "m81", month: "November 2026", date: "Nov 10", owner: "BOO", desc: "New Car Note Payment", acct: "boo", amt: -700.00 },
+            { id: "m82", month: "November 2026", date: "Nov 15", owner: "ME", desc: "Truist Loan Auto-Draft", acct: "me", amt: -159.00 },
+            { id: "m83", month: "November 2026", date: "Nov 20", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m84", month: "November 2026", date: "Nov 20", owner: "ME", desc: "Household Split Stack", acct: "me", amt: -955.00 },
+            { id: "m85", month: "November 2026", date: "Nov 20", owner: "BOO", desc: "Receive Transfer from Me", acct: "boo", amt: 530.00 },
+            { id: "m86", month: "November 2026", date: "Nov 22", owner: "BOO", desc: "Home Internet Bill Auto-Pay", acct: "boo", amt: -70.00 },
+            { id: "m87", month: "November 2026", date: "Nov 25", owner: "BOO", desc: "Pay Monthly Rent Installment", acct: "boo", amt: -2000.00 },
+            { id: "m88", month: "November 2026", date: "Nov 25", owner: "BOO", desc: "Phone Bill Auto-Draft", acct: "boo", amt: -231.00 },
+            { id: "m89", month: "November 2026", date: "Nov 28", owner: "ME", desc: "Credit Card Payment", acct: "me", amt: -50.00 },
+                      // DECEMBER 2026
+            { id: "m90", month: "December 2026", date: "Dec 04", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m91", month: "December 2026", date: "Dec 04", owner: "ME", desc: "Household Split Stack", acct: "me", amt: -955.00 },
+            { id: "m92", month: "December 2026", date: "Dec 04", owner: "BOO", desc: "Receive Transfer from Me", acct: "boo", amt: 530.00 },
+            { id: "m93", month: "December 2026", date: "Dec 05", owner: "ME", desc: "YouTube Subscription", acct: "me", amt: -15.00 },
+            { id: "m94", month: "December 2026", date: "Dec 10", owner: "BOO", desc: "New Car Note Payment", acct: "boo", amt: -700.00 },
+            { id: "m95", month: "December 2026", date: "Dec 15", owner: "ME", desc: "Truist Loan Auto-Draft", acct: "me", amt: -159.00 },
+            { id: "m96", month: "December 2026", date: "Dec 18", owner: "ME", desc: "Biweekly Paycheck Hits", acct: "me", amt: 1364.00, isPayday: true },
+            { id: "m97", month: "December 2026", date: "Dec 18", owner: "ME", desc: "Household Split Stack", acct: "me", amt: -955.00 },
+            { id: "m98", month: "December 2026", date: "Dec 18", owner: "BOO", desc: "Receive Transfer from Me", acct: "boo", amt: 530.00 },
+            { id: "m99", month: "December 2026", date: "Dec 22", owner: "BOO", desc: "Home Internet Bill Auto-Pay", acct: "boo", amt: -70.00 },
+            { id: "m100", month: "December 2026", date: "Dec 25", owner: "BOO", desc: "Pay Monthly Rent Installment", acct: "boo", amt: -2000.00 },
+            { id: "m101", month: "December 2026", date: "Dec 25", owner: "BOO", desc: "Phone Bill Auto-Draft", acct: "boo", amt: -231.00 },
+            { id: "m102", month: "December 2026", date: "Dec 28", owner: "ME", desc: "Credit Card Payment", acct: "me", amt: -50.00 },
+            { id: "m103", month: "December 2026", date: "Dec 31", owner: "BOTH", desc: "Year-End Balance Reconciliation Audit", acct: "me", amt: 0.00 }
+        ];
+                  let checkState = JSON.parse(localStorage.getItem('budget_checkState')) || {};
+        let amountOverrides = JSON.parse(localStorage.getItem('budget_amtOverrides')) || {};
+        let dayEndTotals = JSON.parse(localStorage.getItem('budget_dayEndTotals')) || {};
+        let regularExpenses = JSON.parse(localStorage.getItem('budget_regularExpenses')) || {};
+
+        function saveState() {
+            localStorage.setItem('budget_checkState', JSON.stringify(checkState));
+            localStorage.setItem('budget_amtOverrides', JSON.stringify(amountOverrides));
+            localStorage.setItem('budget_dayEndTotals', JSON.stringify(dayEndTotals));
+            localStorage.setItem('budget_regularExpenses', JSON.stringify(regularExpenses));
+        }
+                  function calculateBalances() {
+            let runningBoo = initialBalances.boo;
+            let runningMe = initialBalances.me;
+            let checkingLowestDip = initialBalances.me;
+            let currentOverdraftFixNeeded = 0;
+
+            ledgerData.forEach(item => {
+                let exactAmt = amountOverrides[item.id] !== undefined ? amountOverrides[item.id] : item.amt;
+                let targetAcct = item.acct.toLowerCase();
+                
+                if (item.isPayday) {
+                    let fields = item.owner === "ME" ? ['cig', 'gas', 'beer'] : ['groceries', 'vape', 'gas'];
+                    fields.forEach(f => {
+                        let val = parseFloat(regularExpenses[`${item.id}-${f}`]) || 0;
+                        exactAmt -= val;
+                    });
+                }
+
+                if (targetAcct === "me") {
+                    runningMe += exactAmt;
+                    // Ignore the initial pre-payday past overdraft deficit from July 15-16
+                    if (item.id !== "m1" && item.id !== "m2" && runningMe < checkingLowestDip) {
+                        checkingLowestDip = runningMe;
+                    }
+                } else if (targetAcct === "boo" || targetAcct === "both") {
+                    runningBoo += exactAmt;
+                }
+                
+                item.projectedBoo = runningBoo;
+                item.projectedMe = runningMe;
+            });
+
+            let safeToSpend = runningMe;
+            if (checkingLowestDip < 0) {
+                currentOverdraftFixNeeded = Math.abs(checkingLowestDip);
+                safeToSpend = 0;
+            } else {
+                safeToSpend = checkingLowestDip;
+            }
+                                let liveStandings = { boo: initialBalances.boo, me: initialBalances.me };
+            ledgerData.forEach(item => {
+                let isChecked = checkState[item.id] || false;
+                let exactAmt = amountOverrides[item.id] !== undefined ? amountOverrides[item.id] : item.amt;
+                let targetAcct = item.acct.toLowerCase();
+                
+                if (isChecked) {
+                    if (targetAcct === "me") liveStandings.me += exactAmt;
+                    else if (targetAcct === "boo" || targetAcct === "both") liveStandings.boo += exactAmt;
+                }
+                
+                if (item.isPayday) {
+                    let fields = item.owner === "ME" ? ['cig', 'gas', 'beer'] : ['groceries', 'vape', 'gas'];
+                    fields.forEach(f => {
+                        let val = parseFloat(regularExpenses[`${item.id}-${f}`]) || 0;
+                        if (item.owner === "ME") liveStandings.me -= val;
+                        else liveStandings.boo -= val;
+                    });
+                }
+            });
+
+            document.getElementById('bal-boo').innerText = `$${liveStandings.boo.toFixed(2)}`;
+            document.getElementById('bal-me').innerText = `$${liveStandings.me.toFixed(2)}`;
+            
+            let safeEl = document.getElementById('tool-safe');
+            safeEl.innerText = `$${safeToSpend.toFixed(2)}`;
+            safeEl.className = safeToSpend > 0 ? "tool-val pos" : "tool-val neg";
+
+            let fixEl = document.getElementById('tool-fix');
+            if (currentOverdraftFixNeeded > 0) {
+                fixEl.innerText = `Transfer $${currentOverdraftFixNeeded.toFixed(2)}`;
+                fixEl.className = "tool-val warn";
+            } else {
+                fixEl.innerText = "Healthy ($0.00)";
+                fixEl.className = "tool-val pos";
+            }
+        }
+
+        function clearAppData() {
+            if (confirm("Clear tracking checkboxes? Custom numbers remain completely saved.")) {
+                checkState = {}; regularExpenses = {}; saveState(); buildUI(); calculateBalances();
+            }
+        }
+                  function buildUI() {
+            const container = document.getElementById('calendar-container');
+            container.innerHTML = "";
+            const months = [...new Set(ledgerData.map(item => item.month))];
+
+            months.forEach(month => {
+                const section = document.createElement('div');
+                section.className = "month-box";
+                
+                let monthItems = ledgerData.filter(item => item.month === month);
+                let monthlyNetSavingsFlow = 0;
+                monthItems.forEach(i => {
+                    let exact = amountOverrides[i.id] !== undefined ? amountOverrides[i.id] : i.amt;
+                    monthlyNetSavingsFlow += exact;
+                });
+                let prefix = monthlyNetSavingsFlow >= 0 ? "+" : "";
+
+                section.innerHTML = `
+                    <div class="month-header-flex">
+                        <div class="month-title">${month}</div>
+                        <div class="month-analysis" style="color: ${monthlyNetSavingsFlow >= 0 ? '#68d391' : '#fc8181'}">
+                            Net Flow: ${prefix}$${monthlyNetSavingsFlow.toFixed(2)}
+                        </div>
+                    </div>
+                `;
+
+                let table = document.createElement('table');
+                table.innerHTML = `<thead><tr><th class="col-chk"></th><th class="col-dt">Date</th><th class="col-own">Own</th><th>Details</th><th class="col-amt">Amount</th></tr></thead><tbody></tbody>`;
+                let tbody = table.querySelector('tbody');
+                              monthItems.forEach(item => {
+                    let tr = document.createElement('tr');
+                    let isChecked = checkState[item.id] || false;
+                    if (isChecked) tr.className = "checked-row";
+
+                    let displayAmt = amountOverrides[item.id] !== undefined ? amountOverrides[item.id] : item.amt;
+                    let amtClass = displayAmt >= 0 ? "pos" : "neg";
+
+                    let myProj = item.projectedMe || 0;
+                    let booProj = item.projectedBoo || 0;
+
+                    let myProjClass = myProj >= 0 ? "pos" : "neg";
+                    let booProjClass = booProj >= 0 ? "pos" : "neg";
+
+                    let rowWarningAlertHtml = "";
+                    if (myProj < 0 && item.acct.toLowerCase() === "me") {
+                        rowWarningAlertHtml = `class="proj-badge-danger"`;
+                    }
+
+                    // Render everyday regular expense input blocks under payday cycles
+                    let dynamicVarInputsHtml = "";
+                    if (item.isPayday) {
+                        if (item.owner === "ME") {
+                            let valCig = regularExpenses[`${item.id}-cig`] || "";
+                            let valGas = regularExpenses[`${item.id}-gas`] || "";
+                            let valBeer = regularExpenses[`${item.id}-beer`] || "";
+                            dynamicVarInputsHtml = `
+                                <div class="var-box-grid">
+                                    <div class="var-input-group"><span class="var-label">Cigs</span><input type="number" placeholder="$0" class="var-field" data-key="${item.id}-cig" value="${valCig}"></div>
+                                    <div class="var-input-group"><span class="var-label">Gas</span><input type="number" placeholder="$0" class="var-field" data-key="${item.id}-gas" value="${valGas}"></div>
+                                    <div class="var-input-group"><span class="var-label">Beer</span><input type="number" placeholder="$0" class="var-field" data-key="${item.id}-beer" value="${valBeer}"></div>
+                                </div>
+                            `;
+                        } else {
+                            let valGroc = regularExpenses[`${item.id}-groceries`] || "";
+                            let valVape = regularExpenses[`${item.id}-vape`] || "";
+                            let valGas = regularExpenses[`${item.id}-gas`] || "";
+                            dynamicVarInputsHtml = `
+                                <div class="var-box-grid">
+                                    <div class="var-input-group"><span class="var-label">Groceries</span><input type="number" placeholder="$0" class="var-field" data-key="${item.id}-groceries" value="${valGroc}"></div>
+                                    <div class="var-input-group"><span class="var-label">Vape</span><input type="number" placeholder="$0" class="var-field" data-key="${item.id}-vape" value="${valVape}"></div>
+                                    <div class="var-input-group"><span class="var-label">Gas</span><input type="number" placeholder="$0" class="var-field" data-key="${item.id}-gas" value="${valGas}"></div>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    tr.innerHTML = `
+                        <td class="col-chk"><input type="checkbox" id="chk-${item.id}" ${isChecked ? 'checked' : ''}></td>
+                        <td class="col-dt">${item.date}</td>
+                        <td class="col-own">${item.owner}</td>
+                        <td>
+                            <div style="font-weight: 600;">${item.desc}</div>
+                            <div class="proj-container" ${rowWarningAlertHtml}>
+                                <div class="proj-line"><span class="proj-name">Your Checking Proj:</span><span class="${myProjClass}">$${myProj.toFixed(2)}</span></div>
+                                <div class="proj-line"><span class="proj-name">Boo Account Proj:</span><span class="${booProjClass}">$${booProj.toFixed(2)}</span></div>
+                            </div>
+                            ${dynamicVarInputsHtml}
+                        </td>
+                        <td class="col-amt"><input type="number" id="amt-${item.id}" value="${displayAmt}" step="0.01" class="${amtClass}"></td>
+                    `;
+                                                    tr.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
+                        checkState[item.id] = e.target.checked;
+                        tr.className = e.target.checked ? "checked-row" : "";
+                        saveState(); calculateBalances();
+                    });
+
+                    tr.querySelector('input[type="number"]:not(.var-field)').addEventListener('input', (e) => {
+                        let val = parseFloat(e.target.value) || 0;
+                        amountOverrides[item.id] = val;
+                        e.target.className = val >= 0 ? "pos" : "neg";
+                        saveState(); calculateBalances();
+                    });
+
+                    // Event configurations to track fluid inputs inside variable grids
+                    tr.querySelectorAll('.var-field').forEach(input => {
+                        input.addEventListener('input', (e) => {
+                            let k = e.target.getAttribute('data-key');
+                            regularExpenses[k] = e.target.value;
+                            saveState(); calculateBalances();
+                        });
+                    });
+
+                    tbody.appendChild(tr);
+                });
+
+                section.appendChild(table);
+                let footer = document.createElement('div');
+                footer.className = "day-end-box";
+                let cachedDayEnd = dayEndTotals[month] || "";
+                footer.innerHTML = `<span>Verify Day-End Statement Total:</span><input type="text" class="day-end-input" id="dayend-${month.replace(/\s+/g, '')}" placeholder="$0.00" value="${cachedDayEnd}">`;
+                footer.querySelector('input').addEventListener('input', (e) => { dayEndTotals[month] = e.target.value; saveState(); });
+                section.appendChild(footer);
+                container.appendChild(section);
+            });
+        }
+
+        // Initialize App Calculations First to Populate Data Vectors
+        calculateBalances();
+        buildUI();
+    </script>
+</body>
+</html>
